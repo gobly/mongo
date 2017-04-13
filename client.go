@@ -6,9 +6,10 @@ import (
 )
 
 type Client struct {
-	db      *mgo.Database
-	c       *mgo.Collection
-	session *mgo.Session
+	db         *mgo.Database
+	c          *mgo.Collection
+	session    *mgo.Session
+	collection string
 }
 
 func (m *Client) Connect(url string, db string, collection string) error {
@@ -23,6 +24,7 @@ func (m *Client) Connect(url string, db string, collection string) error {
 	m.db = session.DB(db)
 	m.c = m.db.C(collection)
 	m.session = session
+	m.collection = collection
 
 	runtime.SetFinalizer(m, func(m *Client) { m.session.Close() })
 	return nil
@@ -49,6 +51,17 @@ func (m *Client) FindById(q interface{}, v interface{}) error {
 }
 
 func (m *Client) CreateCollection() error {
+	cols, err := m.db.CollectionNames()
+	if err != nil {
+		return err
+	}
+
+	for _, collection := range cols {
+		if collection == m.collection {
+			return nil
+		}
+	}
+
 	return m.c.Create(&mgo.CollectionInfo{})
 }
 
