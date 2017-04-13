@@ -11,9 +11,9 @@ type HelloWorld struct {
 
 const collectionName = "testCollection"
 
-func connect(t *testing.T) *Mongo {
-	m := Mongo{}
-	err := m.connect("localhost", "local", collectionName)
+func connect(t *testing.T) *Client {
+	m := Client{}
+	err := m.Connect("localhost", "local", collectionName)
 
 	if err != nil {
 		t.Errorf("Could not connect to database: %s", err.Error())
@@ -32,7 +32,7 @@ func TestCreateCollection(t *testing.T) {
 		return
 	}
 
-	err := m.create()
+	err := m.CreateCollection()
 	if err != nil {
 		t.Errorf("Could not cteate test collection: %s", err.Error())
 	}
@@ -45,7 +45,7 @@ func TestInsertCollection(t *testing.T) {
 	}
 
 	v := HelloWorld{"World", "Hello"}
-	err := m.insert(v)
+	err := m.Insert(v)
 	if err != nil {
 		t.Errorf("Could not insert test data to collection: %s", err.Error())
 	}
@@ -59,7 +59,7 @@ func TestFindDocuments(t *testing.T) {
 
 	q := HelloWorld{Name: "World"}
 	v := []HelloWorld{}
-	err := m.findByValue(q, &v)
+	err := m.FindByValue(q, &v)
 	if err != nil {
 		t.Errorf("Could not lookup collection: %s", err.Error())
 		return
@@ -77,7 +77,7 @@ func TestReadDocument(t *testing.T) {
 	}
 
 	q := HelloWorld{Name: "World"}
-	err := m.readByValue(&q)
+	err := m.ReadByValue(&q)
 	if err != nil {
 		t.Errorf("Could not read from collection %s", err.Error())
 		return
@@ -94,7 +94,7 @@ func TestDeleteCollection(t *testing.T) {
 		return
 	}
 
-	err := m.drop()
+	err := m.DropCollection()
 	if err != nil {
 		t.Errorf("Could not delete test collection: %s", err.Error())
 	}

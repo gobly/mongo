@@ -5,13 +5,13 @@ import (
 	"runtime"
 )
 
-type Mongo struct {
+type Client struct {
 	db      *mgo.Database
 	c       *mgo.Collection
 	session *mgo.Session
 }
 
-func (m *Mongo) connect(url string, db string, collection string) error {
+func (m *Client) Connect(url string, db string, collection string) error {
 	session, err := mgo.Dial(url)
 
 	if err != nil {
@@ -24,34 +24,34 @@ func (m *Mongo) connect(url string, db string, collection string) error {
 	m.c = m.db.C(collection)
 	m.session = session
 
-	runtime.SetFinalizer(m, func(m *Mongo) { m.session.Close() })
+	runtime.SetFinalizer(m, func(m *Client) { m.session.Close() })
 	return nil
 }
 
-func (m *Mongo) insert(v interface{}) error {
+func (m *Client) Insert(v interface{}) error {
 	return m.c.Insert(v)
 }
 
-func (m *Mongo) readByValue(v interface{}) error {
+func (m *Client) ReadByValue(v interface{}) error {
 	return m.c.Find(v).One(v)
 }
 
-func (m *Mongo) readByID(v interface{}) error {
+func (m *Client) ReadByID(v interface{}) error {
 	return m.c.FindId(v).One(v)
 }
 
-func (m *Mongo) findByValue(q interface{}, v interface{}) error {
+func (m *Client) FindByValue(q interface{}, v interface{}) error {
 	return m.c.Find(q).All(v)
 }
 
-func (m *Mongo) findById(q interface{}, v interface{}) error {
+func (m *Client) FindById(q interface{}, v interface{}) error {
 	return m.c.FindId(q).All(v)
 }
 
-func (m *Mongo) create() error {
+func (m *Client) CreateCollection() error {
 	return m.c.Create(&mgo.CollectionInfo{})
 }
 
-func (m *Mongo) drop() error {
+func (m *Client) DropCollection() error {
 	return m.c.DropCollection()
 }
