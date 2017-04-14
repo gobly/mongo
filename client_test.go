@@ -90,7 +90,7 @@ func TestReadDocument(t *testing.T) {
 	}
 }
 
-func testDeleteCollection(t *testing.T) {
+func TestDeleteCollection(t *testing.T) {
 	m := connect(t)
 	if m == nil {
 		return
