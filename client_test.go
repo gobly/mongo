@@ -1,12 +1,14 @@
 package mongo
 
 import (
+	"gopkg.in/mgo.v2/bson"
 	"testing"
 )
 
 type HelloWorld struct {
-	Name  string `bson:"name,omitempty"`
-	Value string `bson:"value,omitempty"`
+	Id    bson.ObjectId `bson:"_id,omitempty"`
+	Name  string        `bson:"name,omitempty"`
+	Value string        `bson:"value,omitempty"`
 }
 
 const collectionName = "testCollection"
@@ -44,8 +46,8 @@ func TestInsertCollection(t *testing.T) {
 		return
 	}
 
-	v := HelloWorld{"World", "Hello"}
-	err := m.Insert(v)
+	v := HelloWorld{Name: "World", Value: "Hello"}
+	err := m.Insert(&v)
 	if err != nil {
 		t.Errorf("Could not insert test data to collection: %s", err.Error())
 	}
@@ -88,7 +90,7 @@ func TestReadDocument(t *testing.T) {
 	}
 }
 
-func TestDeleteCollection(t *testing.T) {
+func testDeleteCollection(t *testing.T) {
 	m := connect(t)
 	if m == nil {
 		return

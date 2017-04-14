@@ -31,7 +31,13 @@ func (m *Client) Connect(url string, db string, collection string) error {
 }
 
 func (m *Client) Insert(v interface{}) error {
-	return m.c.Insert(v)
+	objectId := ObjectId{}
+	oid, ok := objectId.GetMirror(v)
+	if !ok {
+		objectId.SetOid(oid)
+	}
+	err := m.c.Insert(v)
+	return err
 }
 
 func (m *Client) ReadByValue(v interface{}) error {
