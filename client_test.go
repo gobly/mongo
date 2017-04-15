@@ -7,7 +7,7 @@ import (
 
 type HelloWorld struct {
 	Id    bson.ObjectId `bson:"_id,omitempty"`
-	Name  string        `bson:"name,omitempty"`
+	Name  string        `bson:"name,omitempty" gobly:"slug"`
 	Value string        `bson:"value,omitempty"`
 }
 
@@ -46,7 +46,7 @@ func TestInsertCollection(t *testing.T) {
 		return
 	}
 
-	v := HelloWorld{Name: "World", Value: "Hello"}
+	v := HelloWorld{Name: "world", Value: "Hello"}
 	err := m.Insert(&v)
 	if err != nil {
 		t.Errorf("Could not insert test data to collection: %s", err.Error())
@@ -59,7 +59,7 @@ func TestFindDocuments(t *testing.T) {
 		return
 	}
 
-	q := HelloWorld{Name: "World"}
+	q := HelloWorld{Name: "world"}
 	v := []HelloWorld{}
 	err := m.FindByValue(q, &v)
 	if err != nil {
@@ -67,7 +67,7 @@ func TestFindDocuments(t *testing.T) {
 		return
 	}
 
-	if v[0].Name != "World" || v[0].Value != "Hello" {
+	if v[0].Name != "world" || v[0].Value != "Hello" {
 		t.Errorf("Got back invalid data: name=%s, value=%s", v[0].Name, v[0].Value)
 	}
 }
@@ -78,14 +78,32 @@ func TestReadDocument(t *testing.T) {
 		return
 	}
 
-	q := HelloWorld{Name: "World"}
+	q := HelloWorld{Name: "world"}
 	err := m.ReadByValue(&q)
 	if err != nil {
 		t.Errorf("Could not read from collection %s", err.Error())
 		return
 	}
 
-	if q.Name != "World" || q.Value != "Hello" {
+	if q.Name != "world" || q.Value != "Hello" {
+		t.Errorf("Got back invalid data: name=%s, value=%s", q.Name, q.Value)
+	}
+}
+
+func TestReturnDocumentFromSlug(t *testing.T) {
+	m := connect(t)
+	if m == nil {
+		return
+	}
+
+	q := HelloWorld{}
+	err := m.ReadBySlug("world", &q)
+	if err != nil {
+		t.Errorf("Could not read from collection %s", err.Error())
+		return
+	}
+
+	if q.Name != "world" || q.Value != "Hello" {
 		t.Errorf("Got back invalid data: name=%s, value=%s", q.Name, q.Value)
 	}
 }
