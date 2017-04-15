@@ -33,10 +33,10 @@ func (m *Client) Connect(url string, db string, collection string) error {
 }
 
 func (m *Client) Insert(v interface{}) error {
-	objectId := ObjectId{}
-	oid, ok := objectId.GetMirror(v)
+	objectId := NewObjectId(v)
+	oid, ok := objectId.Value()
 	if !ok {
-		objectId.SetOid(oid)
+		objectId.SetValue(oid)
 	}
 	err := m.c.Insert(v)
 	return err
