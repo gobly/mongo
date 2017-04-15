@@ -3,6 +3,8 @@ package mongo
 import (
 	"gopkg.in/mgo.v2"
 	"runtime"
+	"gopkg.in/mgo.v2/bson"
+	"github.com/gobly/core"
 )
 
 type Client struct {
@@ -46,6 +48,16 @@ func (m *Client) ReadByValue(v interface{}) error {
 
 func (m *Client) ReadByID(v interface{}) error {
 	return m.c.FindId(v).One(v)
+}
+
+func (m *Client) ReadBySlug(slug string, v interface{}) error {
+	if bson.IsObjectIdHex(slug) {
+		return m.c.FindId(bson.M{"_id": bson.ObjectIdHex(slug)}).One(v)
+	}
+
+	s := core.NewSlug(v)
+	s.SetValue(slug)
+	return m.c.Find(v).One(v)
 }
 
 func (m *Client) FindByValue(q interface{}, v interface{}) error {
