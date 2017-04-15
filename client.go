@@ -81,6 +81,26 @@ func (m *Client) FindById(q interface{}, v interface{}) error {
 	return m.c.FindId(oid).All(v)
 }
 
+func (m *Client) DeleteById(v interface{}) error {
+	objectId := NewObjectId(v)
+	oid, ok := objectId.Value()
+	if !ok {
+		return errors.New("Could not find ObjectID")
+	}
+
+	return m.c.RemoveId(oid)
+}
+
+func (m *Client) DeleteBySlug(slug string, v interface{}) error {
+	if bson.IsObjectIdHex(slug) {
+		return m.c.RemoveId(bson.ObjectIdHex(slug))
+	}
+
+	s := core.NewSlug(v)
+	s.SetValue(slug)
+	return m.c.Remove(v)
+}
+
 func (m *Client) CreateCollection() error {
 	cols, err := m.db.CollectionNames()
 	if err != nil {
