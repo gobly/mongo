@@ -5,6 +5,7 @@ import (
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"runtime"
+	"errors"
 )
 
 type Client struct {
@@ -47,7 +48,13 @@ func (m *Client) ReadByValue(v interface{}) error {
 }
 
 func (m *Client) ReadByID(v interface{}) error {
-	return m.c.FindId(v).One(v)
+	objectId := NewObjectId(v)
+	oid, ok := objectId.Value()
+	if !ok {
+		return errors.New("Could not find ObjectID")
+	}
+
+	return m.c.FindId(oid).One(v)
 }
 
 func (m *Client) ReadBySlug(slug string, v interface{}) error {
@@ -65,7 +72,13 @@ func (m *Client) FindByValue(q interface{}, v interface{}) error {
 }
 
 func (m *Client) FindById(q interface{}, v interface{}) error {
-	return m.c.FindId(q).All(v)
+	objectId := NewObjectId(q)
+	oid, ok := objectId.Value()
+	if !ok {
+		return errors.New("Could not find ObjectID")
+	}
+
+	return m.c.FindId(oid).All(v)
 }
 
 func (m *Client) CreateCollection() error {
