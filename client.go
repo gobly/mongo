@@ -52,7 +52,7 @@ func (m *Client) ReadByID(v interface{}) error {
 
 func (m *Client) ReadBySlug(slug string, v interface{}) error {
 	if bson.IsObjectIdHex(slug) {
-		return m.c.FindId(bson.M{"_id": bson.ObjectIdHex(slug)}).One(v)
+		return m.c.FindId(bson.ObjectIdHex(slug)).One(v)
 	}
 
 	s := core.NewSlug(v)
