@@ -47,14 +47,12 @@ func (m *Client) ReadByValue(v interface{}) error {
 	return m.c.Find(v).One(v)
 }
 
-func (m *Client) ReadByID(v interface{}) error {
-	objectId := NewObjectId(v)
-	oid, ok := objectId.Value()
-	if !ok {
-		return errors.New("Could not find ObjectID")
+func (m *Client) ReadByID(objectId string, v interface{}) error {
+	if !bson.IsObjectIdHex(objectId) {
+		return errors.New("Invalid ObjectID format")
 	}
 
-	return m.c.FindId(oid).One(v)
+	return m.c.FindId(bson.ObjectIdHex(objectId)).One(v)
 }
 
 func (m *Client) ReadBySlug(slug string, v interface{}) error {
@@ -71,24 +69,20 @@ func (m *Client) FindByValue(q interface{}, v interface{}) error {
 	return m.c.Find(q).All(v)
 }
 
-func (m *Client) FindById(q interface{}, v interface{}) error {
-	objectId := NewObjectId(q)
-	oid, ok := objectId.Value()
-	if !ok {
-		return errors.New("Could not find ObjectID")
+func (m *Client) FindById(objectId string, v interface{}) error {
+	if !bson.IsObjectIdHex(objectId) {
+		return errors.New("Invalid ObjectID format")
 	}
 
-	return m.c.FindId(oid).All(v)
+	return m.c.FindId(bson.ObjectIdHex(objectId)).All(v)
 }
 
-func (m *Client) DeleteById(v interface{}) error {
-	objectId := NewObjectId(v)
-	oid, ok := objectId.Value()
-	if !ok {
-		return errors.New("Could not find ObjectID")
+func (m *Client) DeleteById(objectId string) error {
+	if !bson.IsObjectIdHex(objectId) {
+		return errors.New("Invalid ObjectID format")
 	}
 
-	return m.c.RemoveId(oid)
+	return m.c.RemoveId(bson.ObjectIdHex(objectId))
 }
 
 func (m *Client) DeleteBySlug(slug string, v interface{}) error {
