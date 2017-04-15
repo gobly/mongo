@@ -1,11 +1,11 @@
 package mongo
 
 import (
+	"errors"
 	"github.com/gobly/core"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"runtime"
-	"errors"
 )
 
 type Client struct {
