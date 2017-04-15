@@ -1,10 +1,10 @@
 package mongo
 
 import (
-	"gopkg.in/mgo.v2"
-	"runtime"
-	"gopkg.in/mgo.v2/bson"
 	"github.com/gobly/core"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
+	"runtime"
 )
 
 type Client struct {
