@@ -11,6 +11,10 @@ type HelloWorld struct {
 	Value string        `bson:"value,omitempty"`
 }
 
+type Hello struct {
+	HelloWorld `bson:",inline"`
+}
+
 const collectionName = "testCollection"
 
 func connect(t *testing.T) *Client {
@@ -47,6 +51,21 @@ func TestInsertCollection(t *testing.T) {
 	}
 
 	v := HelloWorld{Name: "world", Value: "Hello"}
+	err := m.Insert(&v)
+	if err != nil {
+		t.Errorf("Could not insert test data to collection: %s", err.Error())
+	}
+}
+
+func TestInsertInlineCollection(t *testing.T) {
+	m := connect(t)
+	if m == nil {
+		return
+	}
+
+	v := Hello{}
+	v.Name = "world"
+	v.Value = "Hello"
 	err := m.Insert(&v)
 	if err != nil {
 		t.Errorf("Could not insert test data to collection: %s", err.Error())

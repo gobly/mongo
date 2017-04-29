@@ -7,36 +7,47 @@ import (
 )
 
 const tag_name = "bson"
-const tag_value = "_id"
+const tag_value_id = "_id"
+const tag_value_inline = "inline"
 
 type objectId struct {
-	value bson.ObjectId
-	field reflect.Value
+	value       bson.ObjectId
+	field       reflect.Value
+	initialized bool
 }
 
 func NewObjectId(v interface{}) *objectId {
 	oid := &objectId{}
 	mirror := reflect.Indirect(reflect.ValueOf(v))
-	mirrorType := mirror.Type()
-	oidType := reflect.TypeOf(oid.value)
+	oid.scanFields(mirror.Type(), reflect.TypeOf(oid.value), mirror)
 
-	for i := 0; i < mirrorType.NumField(); i++ {
-		field := mirrorType.Field(i)
-		if field.Type != oidType {
-			continue
+	if !oid.initialized {
+		panic(`No ID field found! Use tag bson:"_id,omitempty" to define one!`)
+	}
+
+	return oid
+}
+
+func (oid *objectId) scanFields(haystack reflect.Type, needle reflect.Type, value reflect.Value) {
+	for i := 0; i < haystack.NumField(); i++ {
+		field := haystack.Field(i)
+		if field.Type != needle {
+			val, ok := field.Tag.Lookup(tag_name)
+			if ok && strings.Contains(val, tag_value_inline) {
+				oid.scanFields(field.Type, needle, value.Field(i))
+				continue
+			}
 		}
 
 		val, ok := field.Tag.Lookup(tag_name)
-		if !ok || !strings.Contains(val, tag_value) {
+		if !ok || !strings.Contains(val, tag_value_id) {
 			continue
 		}
 
-		oid.field = mirror.Field(i)
+		oid.field = value.Field(i)
 		oid.value = oid.field.Interface().(bson.ObjectId)
-		return oid
+		oid.initialized = true
 	}
-
-	panic(`No ID field found! Use tag bson:"_id,omitempty" to define one!`)
 }
 
 func (oid *objectId) Value() (value bson.ObjectId, valid bool) {
