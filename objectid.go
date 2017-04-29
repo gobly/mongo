@@ -22,7 +22,8 @@ func NewObjectId(v interface{}) *objectId {
 	oid.scanFields(mirror.Type(), reflect.TypeOf(oid.value), mirror)
 
 	if !oid.initialized {
-		panic(`No ID field found! Use tag bson:"_id,omitempty" to define one!`)
+		panic(`No ID field found! Use tag bson:"_id,omitempty" to define one! ` +
+			`If this is a compound object, use tag bson:",inline" to enable scanning of embedded struct.`)
 	}
 
 	return oid
