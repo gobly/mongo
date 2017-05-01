@@ -43,6 +43,16 @@ func (m *Client) Insert(v interface{}) error {
 	return err
 }
 
+func (m *Client) Update(v interface{}) error {
+	objectId := NewObjectId(v)
+	oid, ok := objectId.Value()
+	if !ok {
+		return errors.New("Missing objectID")
+	}
+
+	return m.c.UpdateId(oid, v)
+}
+
 func (m *Client) ReadByValue(v interface{}) error {
 	return m.c.Find(v).One(v)
 }
