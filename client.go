@@ -57,6 +57,10 @@ func (m *Client) ReadByValue(v interface{}) error {
 	return m.c.Find(v).One(v)
 }
 
+func (m *Client) ReadRaw(q map[string]string, v interface{}) error {
+	return m.c.Find(q).One(v)
+}
+
 func (m *Client) ReadByID(objectId string, v interface{}) error {
 	if !bson.IsObjectIdHex(objectId) {
 		return errors.New("Invalid ObjectID format")
@@ -113,7 +117,7 @@ func (m *Client) CreateCollection() error {
 
 	for _, collection := range cols {
 		if collection == m.collection {
-			return nil
+			return errors.New("Collection already exists")
 		}
 	}
 
