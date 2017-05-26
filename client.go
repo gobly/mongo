@@ -79,6 +79,10 @@ func (m *Client) ReadBySlug(slug string, v interface{}) error {
 	return m.c.Find(v).One(v)
 }
 
+func (m *Client) FindAll(v interface{}) error {
+	return m.c.Find(nil).All(v)
+}
+
 func (m *Client) FindByValue(q interface{}, v interface{}) error {
 	return m.c.Find(q).All(v)
 }
