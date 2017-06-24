@@ -95,6 +95,13 @@ func (m *Client) FindById(objectId string, v interface{}) error {
 	return m.c.FindId(bson.ObjectIdHex(objectId)).All(v)
 }
 
+func (m *Client) FindGroup(q interface{}, groupPipe bson.M, v interface{}) error {
+	return m.c.Pipe([]bson.M{
+		{"$match": q},
+		{"$group": groupPipe},
+	}).All(v)
+}
+
 func (m *Client) DeleteById(objectId string) error {
 	if !bson.IsObjectIdHex(objectId) {
 		return errors.New("Invalid ObjectID format")
