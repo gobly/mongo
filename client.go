@@ -95,11 +95,32 @@ func (m *Client) FindById(objectId string, v interface{}) error {
 	return m.c.FindId(bson.ObjectIdHex(objectId)).All(v)
 }
 
-func (m *Client) FindGroup(q interface{}, groupPipe bson.M, v interface{}) error {
-	return m.c.Pipe([]bson.M{
+func (m *Client) FindGroup(q interface{}, groupPipe bson.M, sortPipe bson.M, v interface{}) error {
+	pipe := []bson.M{
 		{"$match": q},
 		{"$group": groupPipe},
-	}).All(v)
+	}
+
+	if len(sortPipe) > 0 {
+		return m.c.Pipe(append(pipe, bson.M{"$sort": sortPipe})).All(v)
+	}
+
+	return m.c.Pipe(pipe).All(v)
+}
+
+func (m *Client) FindRedact(q interface{}, redactPipe bson.M, sortPipe bson.M, v interface{}) error {
+	pipe := []bson.M{
+		{"$match": q},
+		{"$redact": bson.M{
+			"$cond": []interface{}{redactPipe, "$$KEEP", "$$PRUNE"},
+		}},
+	}
+
+	if len(sortPipe) > 0 {
+		return m.c.Pipe(append(pipe, bson.M{"$sort": sortPipe})).All(v)
+	}
+
+	return m.c.Pipe(pipe).All(v)
 }
 
 func (m *Client) DeleteById(objectId string) error {
