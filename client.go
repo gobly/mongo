@@ -87,6 +87,10 @@ func (m *Client) FindByValue(q interface{}, v interface{}) error {
 	return m.c.Find(q).All(v)
 }
 
+func (m *Client) FindByValueSorted(q interface{}, v interface{}, fields ...string) error {
+	return m.c.Find(q).Sort(fields...).All(v)
+}
+
 func (m *Client) FindById(objectId string, v interface{}) error {
 	if !bson.IsObjectIdHex(objectId) {
 		return errors.New("Invalid ObjectID format")
