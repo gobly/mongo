@@ -53,8 +53,16 @@ func (m *Client) Update(v interface{}) error {
 	return m.c.UpdateId(oid, v)
 }
 
+func (m *Client) UpdateRawFiltered(f bson.M, q bson.M) error {
+	return m.c.Update(f, q)
+}
+
 func (m *Client) UpdateRaw(q bson.M) error {
 	return m.c.Update(nil, q)
+}
+
+func (m *Client) ReadByValueFiltered(f interface{}, v interface{}) error {
+	return m.c.Find(v).Select(f).One(v)
 }
 
 func (m *Client) ReadByValue(v interface{}) error {
