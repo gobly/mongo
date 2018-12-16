@@ -69,7 +69,7 @@ func (m *Client) ReadByValue(v interface{}) error {
 	return m.c.Find(v).One(v)
 }
 
-func (m *Client) ReadRaw(q map[string]string, v interface{}) error {
+func (m *Client) ReadRaw(q bson.M, v interface{}) error {
 	return m.c.Find(q).One(v)
 }
 
