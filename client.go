@@ -73,6 +73,10 @@ func (m *Client) ReadRaw(q bson.M, v interface{}) error {
 	return m.c.Find(q).One(v)
 }
 
+func (m *Client) ReadRawFiltered(q bson.M, f bson.M, v interface{}) error {
+	return m.c.Find(q).Select(f).One(v)
+}
+
 func (m *Client) ReadByID(objectId string, v interface{}) error {
 	if !bson.IsObjectIdHex(objectId) {
 		return errors.New("Invalid ObjectID format")
