@@ -33,6 +33,11 @@ func (m *Client) Connect(url string, db string, collection string) error {
 	return nil
 }
 
+func (m *Client) Close() {
+	m.db.Logout()
+	m.session.Close()
+}
+
 func (m *Client) Insert(v interface{}) error {
 	objectId := NewObjectId(v)
 	oid, ok := objectId.Value()
