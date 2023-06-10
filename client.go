@@ -1,41 +1,40 @@
 package mongo
 
 import (
+	"context"
 	"errors"
 	"github.com/gobly/core"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"runtime"
 )
 
 type Client struct {
-	db         *mgo.Database
-	c          *mgo.Collection
-	session    *mgo.Session
+	db         *mongo.Database
+	c          *mongo.Collection
+	client     *mongo.Client
 	collection string
 }
 
 func (m *Client) Connect(url string, db string, collection string) error {
-	session, err := mgo.Dial(url)
-
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(url))
 	if err != nil {
 		return err
 	}
 
-	session.SetMode(mgo.Monotonic, true)
-
-	m.db = session.DB(db)
-	m.c = m.db.C(collection)
-	m.session = session
+	m.client = client
+	m.db = m.client.Database(db)
+	m.c = m.db.Collection(collection)
 	m.collection = collection
 
-	runtime.SetFinalizer(m, func(m *Client) { m.session.Close() })
+	runtime.SetFinalizer(m, func(m *Client) { m.Close() })
 	return nil
 }
 
 func (m *Client) Close() {
-	m.db.Logout()
-	m.session.Close()
+	_ = m.client.Disconnect(context.TODO())
 }
 
 func (m *Client) Insert(v interface{}) error {
@@ -44,7 +43,7 @@ func (m *Client) Insert(v interface{}) error {
 	if !ok {
 		objectId.SetValue(oid)
 	}
-	err := m.c.Insert(v)
+	_, err := m.c.InsertOne(context.TODO(), v)
 	return err
 }
 
@@ -52,72 +51,92 @@ func (m *Client) Update(v interface{}) error {
 	objectId := NewObjectId(v)
 	oid, ok := objectId.Value()
 	if !ok {
-		return errors.New("Missing objectID")
+		return errors.New("missing objectID")
 	}
 
-	return m.c.UpdateId(oid, v)
+	_, err := m.c.ReplaceOne(context.TODO(), bson.M{tag_value_id: oid}, v)
+	return err
 }
 
 func (m *Client) UpdateRawFiltered(f bson.M, q bson.M) error {
-	return m.c.Update(f, q)
+	res := m.c.FindOneAndReplace(context.TODO(), f, q)
+	return res.Err()
 }
 
 func (m *Client) UpdateRaw(q bson.M) error {
-	return m.c.Update(nil, q)
+	_, err := m.c.ReplaceOne(context.TODO(), nil, q)
+	return err
 }
 
 func (m *Client) ReadByValueFiltered(f interface{}, v interface{}) error {
-	return m.c.Find(v).Select(f).One(v)
+	return m.c.FindOne(context.TODO(), f).Decode(v)
 }
 
 func (m *Client) ReadByValue(v interface{}) error {
-	return m.c.Find(v).One(v)
+	return m.c.FindOne(context.TODO(), v).Decode(v)
 }
 
 func (m *Client) ReadRaw(q bson.M, v interface{}) error {
-	return m.c.Find(q).One(v)
-}
-
-func (m *Client) ReadRawFiltered(q bson.M, f bson.M, v interface{}) error {
-	return m.c.Find(q).Select(f).One(v)
+	return m.c.FindOne(context.TODO(), q).Decode(v)
 }
 
 func (m *Client) ReadByID(objectId string, v interface{}) error {
-	if !bson.IsObjectIdHex(objectId) {
-		return errors.New("Invalid ObjectID format")
+	oid, err := primitive.ObjectIDFromHex(objectId)
+	if err != nil {
+		return err
 	}
 
-	return m.c.FindId(bson.ObjectIdHex(objectId)).One(v)
+	return m.c.FindOne(context.TODO(), bson.M{tag_value_id: oid}).Decode(v)
 }
 
 func (m *Client) ReadBySlug(slug string, v interface{}) error {
-	if bson.IsObjectIdHex(slug) {
-		return m.c.FindId(bson.ObjectIdHex(slug)).One(v)
+	oid, err := primitive.ObjectIDFromHex(slug)
+	if err == nil {
+		return m.c.FindOne(context.TODO(), bson.M{tag_value_id: oid}).Decode(v)
 	}
 
 	s := core.NewSlug(v)
 	s.SetValue(slug)
-	return m.c.Find(v).One(v)
+	return m.c.FindOne(context.TODO(), v).Decode(v)
 }
 
 func (m *Client) FindAll(v interface{}) error {
-	return m.c.Find(nil).All(v)
+	res, err := m.c.Find(context.TODO(), bson.D{})
+	if err != nil {
+		return err
+	}
+	return res.All(context.TODO(), v)
 }
 
 func (m *Client) FindByValue(q interface{}, v interface{}) error {
-	return m.c.Find(q).All(v)
+	res, err := m.c.Find(context.TODO(), q)
+	if err != nil {
+		return err
+	}
+	return res.All(context.TODO(), v)
 }
 
 func (m *Client) FindByValueSorted(q interface{}, v interface{}, fields ...string) error {
-	return m.c.Find(q).Sort(fields...).All(v)
+	res, err := m.c.Find(context.TODO(), q, options.Find().SetSort(fields))
+	if err != nil {
+		return err
+	}
+
+	return res.All(context.TODO(), v)
 }
 
 func (m *Client) FindById(objectId string, v interface{}) error {
-	if !bson.IsObjectIdHex(objectId) {
-		return errors.New("Invalid ObjectID format")
+	oid, err := primitive.ObjectIDFromHex(objectId)
+	if err != nil {
+		return err
 	}
 
-	return m.c.FindId(bson.ObjectIdHex(objectId)).All(v)
+	res, err := m.c.Find(context.TODO(), bson.M{tag_value_id: oid})
+	if err != nil {
+		return err
+	}
+
+	return res.All(context.TODO(), v)
 }
 
 func (m *Client) FindGroup(q interface{}, groupPipe bson.M, sortPipe bson.M, v interface{}) error {
@@ -127,10 +146,15 @@ func (m *Client) FindGroup(q interface{}, groupPipe bson.M, sortPipe bson.M, v i
 	}
 
 	if len(sortPipe) > 0 {
-		return m.c.Pipe(append(pipe, bson.M{"$sort": sortPipe})).All(v)
+		pipe = append(pipe, bson.M{"$sort": sortPipe})
 	}
 
-	return m.c.Pipe(pipe).All(v)
+	res, err := m.c.Aggregate(context.TODO(), pipe)
+	if err != nil {
+		return err
+	}
+
+	return res.All(context.TODO(), v)
 }
 
 func (m *Client) FindRedact(q interface{}, redactPipe bson.M, sortPipe bson.M, v interface{}) error {
@@ -142,45 +166,55 @@ func (m *Client) FindRedact(q interface{}, redactPipe bson.M, sortPipe bson.M, v
 	}
 
 	if len(sortPipe) > 0 {
-		return m.c.Pipe(append(pipe, bson.M{"$sort": sortPipe})).All(v)
+		pipe = append(pipe, bson.M{"$sort": sortPipe})
 	}
 
-	return m.c.Pipe(pipe).All(v)
+	res, err := m.c.Aggregate(context.TODO(), pipe)
+	if err != nil {
+		return err
+	}
+
+	return res.All(context.TODO(), v)
 }
 
 func (m *Client) DeleteById(objectId string) error {
-	if !bson.IsObjectIdHex(objectId) {
-		return errors.New("Invalid ObjectID format")
+	oid, err := primitive.ObjectIDFromHex(objectId)
+	if err != nil {
+		return err
 	}
 
-	return m.c.RemoveId(bson.ObjectIdHex(objectId))
+	_, err = m.c.DeleteOne(context.TODO(), bson.M{tag_value_id: oid})
+	return err
 }
 
 func (m *Client) DeleteBySlug(slug string, v interface{}) error {
-	if bson.IsObjectIdHex(slug) {
-		return m.c.RemoveId(bson.ObjectIdHex(slug))
+	oid, err := primitive.ObjectIDFromHex(slug)
+	if err == nil {
+		_, err := m.c.DeleteOne(context.TODO(), bson.M{tag_value_id: oid})
+		return err
 	}
 
 	s := core.NewSlug(v)
 	s.SetValue(slug)
-	return m.c.Remove(v)
+	_, err = m.c.DeleteOne(context.TODO(), s)
+	return err
 }
 
 func (m *Client) CreateCollection() error {
-	cols, err := m.db.CollectionNames()
+	cols, err := m.db.ListCollectionNames(context.TODO(), bson.D{})
 	if err != nil {
 		return err
 	}
 
 	for _, collection := range cols {
 		if collection == m.collection {
-			return errors.New("Collection already exists")
+			return errors.New("collection already exists")
 		}
 	}
 
-	return m.c.Create(&mgo.CollectionInfo{})
+	return m.db.CreateCollection(context.TODO(), m.collection)
 }
 
 func (m *Client) DropCollection() error {
-	return m.c.DropCollection()
+	return m.c.Drop(context.TODO())
 }

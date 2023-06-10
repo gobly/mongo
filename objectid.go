@@ -1,7 +1,7 @@
 package mongo
 
 import (
-	"gopkg.in/mgo.v2/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"reflect"
 	"strings"
 )
@@ -11,7 +11,7 @@ const tag_value_id = "_id"
 const tag_value_inline = "inline"
 
 type objectId struct {
-	value       bson.ObjectId
+	value       primitive.ObjectID
 	field       reflect.Value
 	initialized bool
 }
@@ -46,20 +46,20 @@ func (oid *objectId) scanFields(haystack reflect.Type, needle reflect.Type, valu
 		}
 
 		oid.field = value.Field(i)
-		oid.value = oid.field.Interface().(bson.ObjectId)
+		oid.value = oid.field.Interface().(primitive.ObjectID)
 		oid.initialized = true
 	}
 }
 
-func (oid *objectId) Value() (value bson.ObjectId, valid bool) {
-	if oid.value.Valid() {
+func (oid *objectId) Value() (value primitive.ObjectID, valid bool) {
+	if primitive.IsValidObjectID(oid.value.Hex()) {
 		return oid.value, true
 	}
 
-	return bson.NewObjectId(), false
+	return primitive.NewObjectID(), false
 }
 
-func (oid *objectId) SetValue(value bson.ObjectId) {
+func (oid *objectId) SetValue(value primitive.ObjectID) {
 	oid.value = value
 	oid.field.Set(reflect.ValueOf(oid.value))
 }
