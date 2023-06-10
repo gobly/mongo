@@ -1,4 +1,4 @@
-module mongo
+module github.com/gobly/mongo
 
 go 1.20
 
